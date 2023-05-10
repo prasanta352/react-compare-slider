@@ -1,6 +1,6 @@
 {
   "name": "react-compare-slider",
-  "version": "2.2.0",
+  "version": "2.2.0-fix-drag",
   "license": "MIT",
   "repository": {
     "type": "git",

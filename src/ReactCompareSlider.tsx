@@ -26,6 +26,7 @@ export interface ReactCompareSliderProps extends Partial<ReactCompareSliderCommo
   onlyHandleDraggable?: boolean;
   /** Callback on position change with position as percentage. */
   onPositionChange?: (position: ReactCompareSliderPropPosition) => void;
+  dismissDraggableOnMouseLeave?: boolean;
 }
 
 /** Properties for internal `updateInternalPosition` callback. */
@@ -56,6 +57,7 @@ export const ReactCompareSlider: React.FC<
   boundsPadding = 0,
   changePositionOnHover = false,
   style,
+  dismissDraggableOnMouseLeave,
   ...props
 }): React.ReactElement => {
   /** DOM node of the root element. */
@@ -225,6 +227,10 @@ export const ReactCompareSlider: React.FC<
   /** Handle mouse/touch move. */
   const handlePointerMove = useCallback(
     function moveCall(ev: MouseEvent | TouchEvent) {
+      if (!isBtnPressed.current && dismissDraggableOnMouseLeave) {
+        setIsDragging(false);
+        return;
+      }
       updateInternalPosition({
         portrait,
         boundsPadding,
@@ -233,7 +239,7 @@ export const ReactCompareSlider: React.FC<
         y: ev instanceof MouseEvent ? ev.pageY : ev.touches[0].pageY,
       });
     },
-    [portrait, boundsPadding, updateInternalPosition]
+    [portrait, boundsPadding, updateInternalPosition, dismissDraggableOnMouseLeave]
   );
 
   /** Handle mouse/touch up. */
@@ -302,6 +308,29 @@ export const ReactCompareSlider: React.FC<
       containerRef.removeEventListener('mouseleave', handleMouseLeave);
     };
   }, [changePositionOnHover, handlePointerMove, handlePointerUp, isDragging]);
+
+  const isBtnPressed = useRef(false);
+
+  useEffect(() => {
+    const containerRef = rootContainerRef.current as HTMLDivElement;
+
+    const handleMouseLeave = () => {
+      // handlePointerUp();
+    };
+    const handleDocumentMouseMove = (ev: MouseEvent) => {
+      const leftBtnPressed = ev.buttons === 1;
+      isBtnPressed.current = leftBtnPressed;
+      // console.log('pressed', leftBtnPressed, ev.x, ev.y);
+    };
+    if (dismissDraggableOnMouseLeave) {
+      containerRef.addEventListener('mouseleave', handleMouseLeave, EVENT_PASSIVE_PARAMS);
+      document.addEventListener('mousemove', handleDocumentMouseMove);
+    }
+    return () => {
+      containerRef.removeEventListener('mouseleave', handleMouseLeave);
+      document.removeEventListener('mousemove', handleDocumentMouseMove);
+    };
+  }, [dismissDraggableOnMouseLeave, handlePointerMove, handlePointerUp, isDragging]);
 
   useEventListener(
     'mousedown',
